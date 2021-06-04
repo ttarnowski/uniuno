@@ -1,7 +1,7 @@
 #pragma once
 
-#include <AsyncResult.hpp>
-#include <function_traits.hpp>
+#include <AsyncResult.h>
+#include <function_traits.h>
 #include <functional>
 
 using namespace utils;

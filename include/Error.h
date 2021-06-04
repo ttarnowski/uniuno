@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ErrorBase.hpp>
+#include <ErrorBase.h>
 
 class Error : public ErrorBase {
 public:

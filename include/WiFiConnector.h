@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Future.hpp>
-#include <WiFiAdapter.hpp>
-#include <create_timeout_future.hpp>
+#include <Future.h>
+#include <WiFiAdapter.h>
+#include <create_timeout_future.h>
 #include <logging.h>
 
 #define ERROR_INVALID_ACCESS_POINT "could not add access point"

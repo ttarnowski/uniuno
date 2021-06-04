@@ -1,6 +1,7 @@
 #pragma once
 
-#include <Future.hpp>
+#include <Future.h>
+#include <Schedule.h>
 #include <queue>
 
 class Executor {

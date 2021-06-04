@@ -2,9 +2,9 @@
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiAdapter.hpp>
+#include <ESP8266WiFiAdapter.h>
 #include <ESP8266WiFiMulti.h>
-#include <WiFiConnector.hpp>
+#include <WiFiConnector.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

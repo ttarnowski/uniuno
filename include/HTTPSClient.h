@@ -2,10 +2,10 @@
 
 #include <CertStoreBearSSL.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiConnector.hpp>
+#include <WiFiConnector.h>
 #include <logging.h>
 #include <memory>
-#include <set_clock.hpp>
+#include <set_clock.h>
 
 class ResponseStream : public Stream {
 public:

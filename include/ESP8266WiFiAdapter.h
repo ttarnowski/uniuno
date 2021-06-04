@@ -2,7 +2,7 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-#include <WiFiAdapter.hpp>
+#include <WiFiAdapter.h>
 
 class ESP8266WiFiAdapter : public WiFiAdapter {
 public:

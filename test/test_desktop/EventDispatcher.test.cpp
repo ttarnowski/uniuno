@@ -1,4 +1,4 @@
-#include <EventDispatcher.hpp>
+#include <EventDispatcher.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

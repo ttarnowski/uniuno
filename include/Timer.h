@@ -2,6 +2,7 @@
 
 #include <Schedule.h>
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 #ifndef ARDUINO

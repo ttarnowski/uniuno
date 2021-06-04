@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Future.hpp>
+#include <Future.h>
 
 #ifndef ARDUINO
-#include <native/millis.hpp>
+#include <native/millis.h>
 #endif
 
 #define ERROR_FUTURE_TIMEOUT "operation timed out"

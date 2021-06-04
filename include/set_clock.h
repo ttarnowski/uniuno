@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Future.hpp>
-#include <WiFiConnector.hpp>
-#include <create_timeout_future.hpp>
+#include <Future.h>
+#include <WiFiConnector.h>
+#include <create_timeout_future.h>
 #include <logging.h>
 #include <time.h>
 

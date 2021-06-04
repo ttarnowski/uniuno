@@ -1,6 +1,5 @@
-#include <Future.hpp>
-#include <chrono>
-#include <create_timeout_future.hpp>
+#include <Future.h>
+#include <create_timeout_future.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

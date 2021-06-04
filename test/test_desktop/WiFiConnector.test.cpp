@@ -1,6 +1,6 @@
 #include <ArduinoFake.h>
-#include <WiFiAdapter.hpp>
-#include <WiFiConnector.hpp>
+#include <WiFiAdapter.h>
+#include <WiFiConnector.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
