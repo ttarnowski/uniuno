@@ -10,7 +10,12 @@
 class BodyStream : public Stream {
 public:
   BodyStream() : wifiClient(), httpClient() {}
-  ~BodyStream() { this->httpClient.end(); }
+  ~BodyStream() {
+    if (this->x509List != nullptr) {
+      free(this->x509List);
+    }
+    this->httpClient.end();
+  }
 
   int available() {
     this->checkBytesLeft();
@@ -60,9 +65,15 @@ public:
     this->wifiClient.setCertStore(certStore);
   }
 
+  void setWiFiClientTrustAnchors(const char *pemCert) {
+    this->x509List = new BearSSL::X509List(pemCert);
+    this->wifiClient.setTrustAnchors(this->x509List);
+  }
+
 private:
   BearSSL::WiFiClientSecure wifiClient;
   HTTPClient httpClient;
+  BearSSL::X509List *x509List;
   int bytesLeft = -2;
 };
 
@@ -134,6 +145,13 @@ public:
     this->wifi_connector = wifi_connector;
   }
 
+  HTTPSClient(WiFiConnector *wifi_connector, const char *host,
+              const char *pem_cert) {
+    this->wifi_connector = wifi_connector;
+    this->host = host;
+    this->pem_cert = pem_cert;
+  }
+
   Future<void, Response> send_request(Request request) {
     return set_clock(this->wifi_connector).and_then(create_future([=](time_t) {
       return this->try_to_send_request(request);
@@ -144,7 +162,17 @@ private:
   AsyncResult<Response> try_to_send_request(Request request) {
     auto body = std::make_shared<BodyStream>();
 
-    body->setWiFiClientCertStore(this->cert_store);
+    if (host != nullptr) {
+      DEBUG("setting single pem certificate on ssl client");
+      body->setWiFiClientTrustAnchors(this->pem_cert);
+
+      if (strstr(request.url, this->host) == nullptr) {
+        return AsyncResult<Response>::reject(Error("invalid host"));
+      }
+    } else {
+      DEBUG("setting certificate store on ssl client");
+      body->setWiFiClientCertStore(this->cert_store);
+    }
 
     HTTPClient &http = body->getHTTPClient();
 
@@ -226,4 +254,7 @@ private:
 
   WiFiConnector *wifi_connector;
   CertStore *cert_store;
+
+  const char *host;
+  const char *pem_cert;
 };

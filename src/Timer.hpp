@@ -3,18 +3,15 @@
 #include <algorithm>
 #include <vector>
 
+#ifndef ARDUINO
+#include <native/millis.hpp>
+#endif
+
 class Timer {
 public:
-#ifdef ARDUINO
   Timer(std::function<unsigned long(void)> getNowInMS = millis) {
     this->now = getNowInMS;
   }
-
-#else
-  Timer(std::function<unsigned long(void)> getNowInMS) {
-    this->now = getNowInMS;
-  }
-#endif
 
   unsigned int setTimeout(std::function<void(void)> callback,
                           unsigned long timeoutMs) {
