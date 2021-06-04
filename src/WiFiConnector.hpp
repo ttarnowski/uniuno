@@ -1,6 +1,5 @@
 #pragma once
 
-#include <EventDispatcher.hpp>
 #include <Future.hpp>
 #include <WiFiAdapter.hpp>
 #include <create_timeout_future.hpp>
@@ -11,15 +10,7 @@
 class WiFiConnector {
 
 public:
-  struct WiFiConnectedEvent {
-    static constexpr const char *Name = "wifi_connected";
-  };
-
-  struct WiFiDisconnectedEvent {
-    static constexpr const char *Name = "wifi_disconnected";
-  };
-
-  WiFiConnector(WiFiAdapter *wifi, unsigned long connection_attempt_ms = 5000) {
+  WiFiConnector(WiFiAdapter *wifi, unsigned long connection_attempt_ms = 2000) {
     this->wifi = wifi;
     this->connection_attempt_ms = connection_attempt_ms;
   }
@@ -35,14 +26,19 @@ public:
 
     return create_timeout_future(
         create_future([this]() {
+          TRACE("checking wifi status");
           if (this->wifi->status() == WL_CONNECTED) {
+            DEBUG("wifi status: connected");
             return AsyncResult<void>::resolve();
           }
+          TRACE("not connected, scanning");
 
           if (this->wifi->run(this->connection_attempt_ms) == WL_CONNECTED) {
+            DEBUG("wifi connected");
             return AsyncResult<void>::resolve();
           }
 
+          TRACE("connecting to wifi in progress");
           return AsyncResult<void>::pending();
         }),
         timeout_ms);

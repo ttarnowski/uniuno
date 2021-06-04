@@ -1,3 +1,5 @@
+#ifdef TEST_INTEGRATION
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiAdapter.hpp>
@@ -6,13 +8,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#ifdef TEST_INTEGRATION
-
 #define XSTR(x) #x
 #define STR(x) XSTR(x)
-
-const char *ssid = STR(SSID);
-const char *password = STR(PASSWORD);
 
 class Callback {
   virtual void call() = 0;
@@ -31,6 +28,9 @@ TEST(WiFiConnector, test_connect_connects_to_wifi) {
   WiFiConnector wifi_connector(&wifi_adapter);
 
   EXPECT_CALL(mock, call());
+  const char *ssid = STR(SSID);
+  const char *password = STR(PASSWORD);
+  wifi_connector.disconnect();
 
   auto future =
       wifi_connector.connect(ssid, password, 60 * 1000).and_then([&mock]() {

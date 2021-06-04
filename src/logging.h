@@ -1,9 +1,6 @@
 #ifndef logging_h
 #define logging_h
-
-#ifndef LOG_LEVEL
-#define LOG_LEVEL LOG_LEVEL_DEBUG
-#endif
+#pragma once
 
 #define LOG_LEVEL_TRACE 0
 #define LOG_LEVEL_DEBUG 100
@@ -15,9 +12,13 @@
 #define LOG_LEVEL_ALERT 550
 #define LOG_LEVEL_EMERGENCY 600
 
+#ifndef LOG_LEVEL
+#define LOG_LEVEL 0
+#endif
+
 #ifdef ARDUINO
 
-const __FlashStringHelper *get_level_name(int level) {
+static const __FlashStringHelper *get_level_name(int level) {
   switch (level) {
   case 100:
     return F("DEBUG");
@@ -61,7 +62,7 @@ const __FlashStringHelper *get_level_name(int level) {
 
 #else
 
-const char *get_level_name(int level) {
+static const char *get_level_name(int level) {
   switch (level) {
   case 100:
     return "DEBUG";

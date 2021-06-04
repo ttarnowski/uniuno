@@ -2,21 +2,20 @@
 
 #include <CertStoreBearSSL.h>
 #include <ESP8266HTTPClient.h>
-#include <EventDispatcher.hpp>
-#include <WiFiManager.hpp>
-#include <setClock.hpp>
+#include <WiFiConnector.hpp>
+#include <logging.h>
+#include <memory>
+#include <set_clock.hpp>
 
 class BodyStream : public Stream {
 public:
-  BodyStream(WiFiClient *wifiClient, HTTPClient *httpClient) {
-    this->wifiClient = wifiClient;
-    this->httpClient = httpClient;
-    this->bytesLeft = this->httpClient->getSize();
-  }
-  ~BodyStream() {}
+  BodyStream() : wifiClient(), httpClient() {}
+  ~BodyStream() { this->httpClient.end(); }
 
   int available() {
-    if (!this->httpClient->connected()) {
+    this->checkBytesLeft();
+
+    if (!this->httpClient.connected()) {
       return 0;
     }
 
@@ -24,11 +23,13 @@ public:
   }
 
   size_t readBytes(uint8_t *buffer, size_t length) {
+    this->checkBytesLeft();
+
     if (this->bytesLeft == 0) {
       return 0;
     }
 
-    int bytesRead = this->wifiClient->readBytes(
+    int bytesRead = this->wifiClient.readBytes(
         buffer, std::min((size_t)this->bytesLeft, length));
 
     if (this->bytesLeft > 0) {
@@ -38,16 +39,31 @@ public:
     return bytesRead;
   }
 
-  size_t write(uint8_t buffer) { return this->wifiClient->write(buffer); }
-  int read() { return this->wifiClient->read(); }
-  int peek() { return this->wifiClient->peek(); }
+  size_t write(uint8_t buffer) {
+    return this->wifiClient.write(&buffer, sizeof(buffer));
+  }
+  int read() { return this->wifiClient.read(); }
+  int peek() { return this->wifiClient.peek(); }
 
-  String readString() { return this->wifiClient->readString(); }
+  String readString() { return this->wifiClient.readString(); }
+
+  void checkBytesLeft() {
+    if (this->bytesLeft == -2) {
+      this->bytesLeft = this->httpClient.getSize();
+    }
+  }
+
+  BearSSL::WiFiClientSecure &getWiFiClient() { return this->wifiClient; }
+  HTTPClient &getHTTPClient() { return this->httpClient; }
+
+  void setWiFiClientCertStore(BearSSL::CertStore *certStore) {
+    this->wifiClient.setCertStore(certStore);
+  }
 
 private:
-  WiFiClient *wifiClient;
-  HTTPClient *httpClient;
-  int bytesLeft;
+  BearSSL::WiFiClientSecure wifiClient;
+  HTTPClient httpClient;
+  int bytesLeft = -2;
 };
 
 class RequestBuilder;
@@ -108,86 +124,74 @@ RequestBuilder Request::build(Request::Method method, const char *url) {
 struct Response {
   const char *error;
   int statusCode;
-  BodyStream *body;
+  std::shared_ptr<BodyStream> body;
 };
 
 class HTTPSClient {
 public:
-  HTTPSClient(CertStore *certStore, WiFiManager *wifiManager, Timer *timer) {
-    this->wifiManager = wifiManager;
-    this->timer = timer;
-    this->certStore = certStore;
+  HTTPSClient(CertStore *cert_store, WiFiConnector *wifi_connector) {
+    this->cert_store = cert_store;
+    this->wifi_connector = wifi_connector;
   }
 
-  void sendRequest(Request request, std::function<void(Response)> onResponse) {
-    this->wifiManager->connect([=](wl_status_t status) {
-      if (status != WL_CONNECTED) {
-        onResponse(Response{"could not connect to WiFi", -1, nullptr});
-        return;
-      }
-
-      setClock(this->timer, [request, onResponse, this](bool success) {
-        if (!success) {
-          onResponse(Response{"could not synchronize the time", -1, nullptr});
-          return;
-        }
-
-        BearSSL::WiFiClientSecure client;
-        client.setCertStore(this->certStore);
-
-        HTTPClient http;
-
-        Serial.print("[HTTP] begin...\n");
-
-        if (http.begin(client, request.url)) {
-          char method[10];
-          this->readMethod(request.method, method);
-
-          Serial.printf("[HTTP] %s %s\n", method, request.url);
-          // start connection and send HTTP header, set the HTTP method and
-          // request body
-          for (auto &h : request.headers) {
-            http.addHeader(h.first, h.second);
-          }
-
-          int httpCode;
-
-          if (request.body == nullptr && request.bodyStr == nullptr) {
-            httpCode = http.sendRequest(method, (uint8_t *)nullptr, 0);
-          } else if (request.body != nullptr) {
-            httpCode = http.sendRequest(method, request.body, request.bodySize);
-          } else {
-            httpCode = http.sendRequest(method, String(request.bodyStr));
-          }
-
-          // httpCode will be negative on error
-          if (httpCode > 0) {
-            // HTTP header has been send and Server response header has been
-            // handled
-            Serial.printf("[HTTP] %s... code: %d\n", method, httpCode);
-
-            BodyStream body(&client, &http);
-
-            onResponse(Response{nullptr, httpCode, &body});
-          } else {
-            // print out the error message
-            Serial.printf("[HTTP] %s... failed, error: %s\n", method,
-                          http.errorToString(httpCode).c_str());
-            onResponse(Response{http.errorToString(httpCode).c_str(), httpCode,
-                                nullptr});
-          }
-
-          // finish the exchange
-          http.end();
-        } else {
-          Serial.printf("[HTTP] Unable to connect\n");
-          onResponse(Response{"unable to connect", -1, nullptr});
-        }
-      });
-    });
+  Future<void, Response> send_request(Request request) {
+    return set_clock(this->wifi_connector).and_then(create_future([=](time_t) {
+      return this->try_to_send_request(request);
+    }));
   }
 
 private:
+  AsyncResult<Response> try_to_send_request(Request request) {
+    auto body = std::make_shared<BodyStream>();
+
+    body->setWiFiClientCertStore(this->cert_store);
+
+    HTTPClient &http = body->getHTTPClient();
+
+    DEBUG("[HTTP] begin...\n");
+
+    if (http.begin(body->getWiFiClient(), request.url)) {
+      char method[10];
+      this->readMethod(request.method, method);
+
+      DEBUGF("[HTTP] %s %s\n", method, request.url);
+      // start connection and send HTTP header, set the HTTP method and
+      // request body
+      for (auto &h : request.headers) {
+        http.addHeader(h.first, h.second);
+      }
+
+      int httpCode;
+
+      if (request.body == nullptr && request.bodyStr == nullptr) {
+        httpCode = http.sendRequest(method, (uint8_t *)nullptr, 0);
+      } else if (request.body != nullptr) {
+        httpCode = http.sendRequest(method, request.body, request.bodySize);
+      } else {
+        httpCode = http.sendRequest(method, String(request.bodyStr));
+      }
+
+      // httpCode will be negative on error
+      if (httpCode > 0) {
+        // HTTP header has been send and Server response header has been
+        // handled
+        DEBUGF("[HTTP] %s... code: %d\n", method, httpCode);
+
+        return AsyncResult<Response>::resolve(
+            Response{nullptr, httpCode, body});
+      } else {
+        // print out the error message
+        ERRORF("[HTTP] %s... failed, error: %s\n", method,
+               http.errorToString(httpCode).c_str());
+        return AsyncResult<Response>::reject(
+            Error(http.errorToString(httpCode).c_str()));
+      }
+    } else {
+      ERROR("[HTTP] Unable to connect\n");
+      return AsyncResult<Response>::reject(Error("unable to connect"));
+    }
+  }
+
   void readMethod(Request::Method method, char *methodValue) {
     switch (method) {
     case Request::OPTIONS:
@@ -220,7 +224,6 @@ private:
     }
   }
 
-  WiFiManager *wifiManager;
-  Timer *timer;
-  CertStore *certStore;
+  WiFiConnector *wifi_connector;
+  CertStore *cert_store;
 };
