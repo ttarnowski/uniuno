@@ -7,74 +7,74 @@
 #include <memory>
 #include <set_clock.hpp>
 
-class BodyStream : public Stream {
+class ResponseStream : public Stream {
 public:
-  BodyStream() : wifiClient(), httpClient() {}
-  ~BodyStream() {
-    if (this->x509List != nullptr) {
-      free(this->x509List);
+  ResponseStream() : wifi_client(), http_client() {}
+  ~ResponseStream() {
+    if (this->x509_list != nullptr) {
+      free(this->x509_list);
     }
-    this->httpClient.end();
+    this->http_client.end();
   }
 
   int available() {
-    this->checkBytesLeft();
+    this->check_bytes_left();
 
-    if (!this->httpClient.connected()) {
+    if (!this->http_client.connected()) {
       return 0;
     }
 
-    return this->bytesLeft;
+    return this->bytes_left;
   }
 
   size_t readBytes(uint8_t *buffer, size_t length) {
-    this->checkBytesLeft();
+    this->check_bytes_left();
 
-    if (this->bytesLeft == 0) {
+    if (this->bytes_left == 0) {
       return 0;
     }
 
-    int bytesRead = this->wifiClient.readBytes(
-        buffer, std::min((size_t)this->bytesLeft, length));
+    int bytesRead = this->wifi_client.readBytes(
+        buffer, std::min((size_t)this->bytes_left, length));
 
-    if (this->bytesLeft > 0) {
-      this->bytesLeft -= bytesRead;
+    if (this->bytes_left > 0) {
+      this->bytes_left -= bytesRead;
     }
 
     return bytesRead;
   }
 
   size_t write(uint8_t buffer) {
-    return this->wifiClient.write(&buffer, sizeof(buffer));
+    return this->wifi_client.write(&buffer, sizeof(buffer));
   }
-  int read() { return this->wifiClient.read(); }
-  int peek() { return this->wifiClient.peek(); }
+  int read() { return this->wifi_client.read(); }
+  int peek() { return this->wifi_client.peek(); }
 
-  String readString() { return this->wifiClient.readString(); }
+  String readString() { return this->wifi_client.readString(); }
 
-  void checkBytesLeft() {
-    if (this->bytesLeft == -2) {
-      this->bytesLeft = this->httpClient.getSize();
+  void check_bytes_left() {
+    if (this->bytes_left == -2) {
+      this->bytes_left = this->http_client.getSize();
     }
   }
 
-  BearSSL::WiFiClientSecure &getWiFiClient() { return this->wifiClient; }
-  HTTPClient &getHTTPClient() { return this->httpClient; }
+  BearSSL::WiFiClientSecure &get_wifi_client() { return this->wifi_client; }
+  HTTPClient &get_HTTP_client() { return this->http_client; }
 
-  void setWiFiClientCertStore(BearSSL::CertStore *certStore) {
-    this->wifiClient.setCertStore(certStore);
+  void set_wifi_client_cert_store(BearSSL::CertStore *cert_store) {
+    this->wifi_client.setCertStore(cert_store);
   }
 
-  void setWiFiClientTrustAnchors(const char *pemCert) {
-    this->x509List = new BearSSL::X509List(pemCert);
-    this->wifiClient.setTrustAnchors(this->x509List);
+  void set_wifi_client_trust_anchors(const char *pem_cert) {
+    this->x509_list = new BearSSL::X509List(pem_cert);
+    this->wifi_client.setTrustAnchors(this->x509_list);
   }
 
 private:
-  BearSSL::WiFiClientSecure wifiClient;
-  HTTPClient httpClient;
-  BearSSL::X509List *x509List;
-  int bytesLeft = -2;
+  BearSSL::WiFiClientSecure wifi_client;
+  HTTPClient http_client;
+  BearSSL::X509List *x509_list;
+  int bytes_left = -2;
 };
 
 class RequestBuilder;
@@ -87,8 +87,8 @@ public:
   const char *url;
   Request::Method method;
   Stream *body = nullptr;
-  size_t bodySize = 0;
-  const char *bodyStr = nullptr;
+  size_t body_size = 0;
+  const char *body_cstr = nullptr;
   std::vector<std::pair<const char *, const char *>> headers;
 };
 
@@ -102,16 +102,16 @@ public:
   operator Request &&() { return std::move(request); }
 
   RequestBuilder &body(const char *b) {
-    request.bodyStr = b;
-    request.bodySize = strlen(b);
+    request.body_cstr = b;
+    request.body_size = strlen(b);
     request.body = nullptr;
     return *this;
   }
 
   RequestBuilder &body(Stream *s, size_t size) {
     request.body = s;
-    request.bodySize = size;
-    request.bodyStr = nullptr;
+    request.body_size = size;
+    request.body_cstr = nullptr;
 
     return *this;
   }
@@ -134,8 +134,8 @@ RequestBuilder Request::build(Request::Method method, const char *url) {
 
 struct Response {
   const char *error;
-  int statusCode;
-  std::shared_ptr<BodyStream> body;
+  int status_code;
+  std::shared_ptr<ResponseStream> body;
 };
 
 class HTTPSClient {
@@ -160,25 +160,25 @@ public:
 
 private:
   AsyncResult<Response> try_to_send_request(Request request) {
-    auto body = std::make_shared<BodyStream>();
+    auto body = std::make_shared<ResponseStream>();
 
     if (host != nullptr) {
       DEBUG("setting single pem certificate on ssl client");
-      body->setWiFiClientTrustAnchors(this->pem_cert);
+      body->set_wifi_client_trust_anchors(this->pem_cert);
 
       if (strstr(request.url, this->host) == nullptr) {
         return AsyncResult<Response>::reject(Error("invalid host"));
       }
     } else {
       DEBUG("setting certificate store on ssl client");
-      body->setWiFiClientCertStore(this->cert_store);
+      body->set_wifi_client_cert_store(this->cert_store);
     }
 
-    HTTPClient &http = body->getHTTPClient();
+    HTTPClient &http = body->get_HTTP_client();
 
     DEBUG("[HTTP] begin...\n");
 
-    if (http.begin(body->getWiFiClient(), request.url)) {
+    if (http.begin(body->get_wifi_client(), request.url)) {
       char method[10];
       this->readMethod(request.method, method);
 
@@ -189,30 +189,31 @@ private:
         http.addHeader(h.first, h.second);
       }
 
-      int httpCode;
+      int http_status_code;
 
-      if (request.body == nullptr && request.bodyStr == nullptr) {
-        httpCode = http.sendRequest(method, (uint8_t *)nullptr, 0);
+      if (request.body == nullptr && request.body_cstr == nullptr) {
+        http_status_code = http.sendRequest(method, (uint8_t *)nullptr, 0);
       } else if (request.body != nullptr) {
-        httpCode = http.sendRequest(method, request.body, request.bodySize);
+        http_status_code =
+            http.sendRequest(method, request.body, request.body_size);
       } else {
-        httpCode = http.sendRequest(method, String(request.bodyStr));
+        http_status_code = http.sendRequest(method, String(request.body_cstr));
       }
 
-      // httpCode will be negative on error
-      if (httpCode > 0) {
+      // http_status_code will be negative on error
+      if (http_status_code > 0) {
         // HTTP header has been send and Server response header has been
         // handled
-        DEBUGF("[HTTP] %s... code: %d\n", method, httpCode);
+        DEBUGF("[HTTP] %s... code: %d\n", method, http_status_code);
 
         return AsyncResult<Response>::resolve(
-            Response{nullptr, httpCode, body});
+            Response{nullptr, http_status_code, body});
       } else {
         // print out the error message
         ERRORF("[HTTP] %s... failed, error: %s\n", method,
-               http.errorToString(httpCode).c_str());
+               http.errorToString(http_status_code).c_str());
         return AsyncResult<Response>::reject(
-            Error(http.errorToString(httpCode).c_str()));
+            Error(http.errorToString(http_status_code).c_str()));
       }
     } else {
       ERROR("[HTTP] Unable to connect\n");
@@ -220,34 +221,34 @@ private:
     }
   }
 
-  void readMethod(Request::Method method, char *methodValue) {
+  void readMethod(Request::Method method, char *method_value) {
     switch (method) {
     case Request::OPTIONS:
-      strcpy(methodValue, "OPTIONS");
+      strcpy(method_value, "OPTIONS");
       break;
 
     case Request::DELETE:
-      strcpy(methodValue, "DELETE");
+      strcpy(method_value, "DELETE");
       break;
 
     case Request::PATCH:
-      strcpy(methodValue, "PATCH");
+      strcpy(method_value, "PATCH");
       break;
 
     case Request::PUT:
-      strcpy(methodValue, "PUT");
+      strcpy(method_value, "PUT");
       break;
 
     case Request::POST:
-      strcpy(methodValue, "POST");
+      strcpy(method_value, "POST");
       break;
 
     case Request::HEAD:
-      strcpy(methodValue, "HEAD");
+      strcpy(method_value, "HEAD");
       break;
 
     default:
-      strcpy(methodValue, "GET");
+      strcpy(method_value, "GET");
       break;
     }
   }

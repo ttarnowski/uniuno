@@ -13,9 +13,9 @@ public:
 
   bool mode(WiFiMode_t m) override { return this->wifi->mode(m); }
 
-  WiFiMode_t getMode() override { return this->wifi->getMode(); }
+  WiFiMode_t get_mode() override { return this->wifi->getMode(); }
 
-  bool addAP(const char *ssid, const char *passphrase) override {
+  bool add_access_point(const char *ssid, const char *passphrase) override {
     return this->wifiMulti->addAP(ssid, passphrase);
   }
 

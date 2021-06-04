@@ -16,11 +16,11 @@ public:
   }
 
   bool add_access_point(const char *ssid, const char *password) {
-    return this->wifi->addAP(ssid, password);
+    return this->wifi->add_access_point(ssid, password);
   }
 
   Future<void, void> connect(unsigned long timeout_ms = 15000) {
-    if (this->wifi->getMode() != WIFI_STA) {
+    if (this->wifi->get_mode() != WIFI_STA) {
       this->wifi->mode(WIFI_STA);
     }
 

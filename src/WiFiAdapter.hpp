@@ -33,9 +33,9 @@ class WiFiAdapter {
 public:
   virtual bool mode(WiFiMode_t m) = 0;
 
-  virtual WiFiMode_t getMode() = 0;
+  virtual WiFiMode_t get_mode() = 0;
 
-  virtual bool addAP(const char *ssid, const char *passphrase) = 0;
+  virtual bool add_access_point(const char *ssid, const char *passphrase) = 0;
 
   virtual wl_status_t status() = 0;
 
