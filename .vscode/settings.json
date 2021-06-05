@@ -42,6 +42,7 @@
     "tuple": "cpp",
     "utility": "cpp",
     "typeinfo": "cpp",
-    "string": "cpp"
+    "string": "cpp",
+    "memory": "cpp"
   }
 }

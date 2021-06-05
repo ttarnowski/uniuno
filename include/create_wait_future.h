@@ -16,7 +16,7 @@ AsyncResult<void> get_wait_async_state(unsigned long timeout_time) {
   return AsyncResult<void>::pending();
 }
 
-template <typename I>
+template <typename I = void>
 Future<I, void> create_wait_future(unsigned long timeout_ms) {
   unsigned long timeout_time = millis() + timeout_ms;
   return Future<I, void>(

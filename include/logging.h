@@ -13,7 +13,7 @@
 #define LOG_LEVEL_EMERGENCY 600
 
 #ifndef LOG_LEVEL
-#define LOG_LEVEL 0
+#define LOG_LEVEL LOG_LEVEL_INFO
 #endif
 
 #ifdef ARDUINO
