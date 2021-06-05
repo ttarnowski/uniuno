@@ -4,6 +4,8 @@
 #include <function_traits.h>
 #include <functional>
 
+namespace uniuno {
+
 using namespace utils;
 
 template <typename I, typename O, typename E = Error> class Future {
@@ -310,3 +312,5 @@ auto create_future(F &&poll_fn)
   return Future<void, typename async_result_trait<typename function_traits<
                           F>::result_type>::result_type>(poll_fn);
 }
+
+} // namespace uniuno

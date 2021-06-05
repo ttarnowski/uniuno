@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 using namespace testing;
+using namespace uniuno;
 
 class WiFiAdapterMock : public WiFiAdapter {
 public:

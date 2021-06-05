@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace testing;
+using namespace uniuno;
 
 struct TestEvent {
   static constexpr const char *Name = "Test";

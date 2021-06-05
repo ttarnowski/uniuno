@@ -1,11 +1,16 @@
 #pragma once
 
+#define ERROR_HTTPS_CLIENT_CONNECTION_FAILED "unable to connect"
+#define ERROR_HTTPS_CLIENT_INVALID_HOST "invalid host"
+
 #include <CertStoreBearSSL.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiConnector.h>
 #include <logging.h>
 #include <memory>
-#include <set_clock.h>
+#include <sync_clock.h>
+
+namespace uniuno {
 
 class ResponseStream : public Stream {
 public:
@@ -133,7 +138,6 @@ RequestBuilder Request::build(Request::Method method, const char *url) {
 }
 
 struct Response {
-  const char *error;
   int status_code;
   std::shared_ptr<ResponseStream> body;
 };
@@ -153,7 +157,7 @@ public:
   }
 
   Future<void, Response> send_request(Request request) {
-    return set_clock(this->wifi_connector).and_then(create_future([=](time_t) {
+    return sync_clock(this->wifi_connector).and_then(create_future([=](time_t) {
       return this->try_to_send_request(request);
     }));
   }
@@ -167,7 +171,8 @@ private:
       body->set_wifi_client_trust_anchors(this->pem_cert);
 
       if (strstr(request.url, this->host) == nullptr) {
-        return AsyncResult<Response>::reject(Error("invalid host"));
+        return AsyncResult<Response>::reject(
+            Error(ERROR_HTTPS_CLIENT_INVALID_HOST));
       }
     } else {
       DEBUG("setting certificate store on ssl client");
@@ -206,8 +211,7 @@ private:
         // handled
         DEBUGF("[HTTP] %s... code: %d\n", method, http_status_code);
 
-        return AsyncResult<Response>::resolve(
-            Response{nullptr, http_status_code, body});
+        return AsyncResult<Response>::resolve(Response{http_status_code, body});
       } else {
         // print out the error message
         ERRORF("[HTTP] %s... failed, error: %s\n", method,
@@ -217,7 +221,8 @@ private:
       }
     } else {
       ERROR("[HTTP] Unable to connect\n");
-      return AsyncResult<Response>::reject(Error("unable to connect"));
+      return AsyncResult<Response>::reject(
+          Error(ERROR_HTTPS_CLIENT_CONNECTION_FAILED));
     }
   }
 
@@ -259,3 +264,5 @@ private:
   const char *host;
   const char *pem_cert;
 };
+
+} // namespace uniuno

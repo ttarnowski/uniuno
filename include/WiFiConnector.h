@@ -7,6 +7,8 @@
 
 #define ERROR_INVALID_ACCESS_POINT "could not add access point"
 
+namespace uniuno {
+
 class WiFiConnector {
 
 public:
@@ -59,3 +61,5 @@ private:
   WiFiAdapter *wifi;
   unsigned long connection_attempt_ms;
 };
+
+} // namespace uniuno

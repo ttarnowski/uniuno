@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace testing;
+using namespace uniuno;
 
 TEST(Future, test_result_has_default_state_pending_for_all_types_of_futures) {
   Future<int, int> f1([](int) { return AsyncResult<int>::pending(); });

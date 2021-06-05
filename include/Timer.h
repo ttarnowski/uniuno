@@ -9,6 +9,8 @@
 #include <native/millis.hpp>
 #endif
 
+namespace uniuno {
+
 class Timer {
 public:
   Timer(std::function<unsigned long(void)> getNowInMS = millis) {
@@ -165,3 +167,6 @@ private:
 
     bool attached = false;
   };
+};
+
+} // namespace uniuno

@@ -3,6 +3,8 @@
 #include <functional>
 #include <vector>
 
+namespace uniuno {
+
 using EventName = const char *;
 
 class EventDispatcher {
@@ -37,3 +39,5 @@ public:
     }
   }
 };
+
+} // namespace uniuno

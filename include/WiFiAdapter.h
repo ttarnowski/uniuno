@@ -1,5 +1,7 @@
 #pragma once
 
+namespace uniuno {
+
 #ifndef ARDUINO
 
 typedef enum WiFiMode {
@@ -45,3 +47,5 @@ public:
 
   virtual ~WiFiAdapter() {}
 };
+
+} // namespace uniuno

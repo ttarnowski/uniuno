@@ -2,6 +2,8 @@
 
 #include <ErrorBase.h>
 
+namespace uniuno {
+
 class Error : public ErrorBase {
 public:
   Error() { this->err = "error"; }
@@ -15,3 +17,5 @@ public:
 private:
   const char *err;
 };
+
+} // namespace uniuno

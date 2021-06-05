@@ -8,6 +8,8 @@
 
 #define ERROR_FUTURE_TIMEOUT "operation timed out"
 
+namespace uniuno {
+
 template <typename I, typename O, typename E = Error>
 Future<I, O, E> create_timeout_future(Future<I, O, E> future,
                                       unsigned long timeout_ms = 5000) {
@@ -33,3 +35,5 @@ Future<void, O, E> create_timeout_future(Future<void, O, E> future,
     return future.poll();
   });
 }
+
+} // namespace uniuno

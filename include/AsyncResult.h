@@ -2,6 +2,8 @@
 
 #include <Error.h>
 
+namespace uniuno {
+
 enum AsyncState { Pending = 0, Resolved, Rejected };
 
 template <typename T, typename E = Error> class AsyncResult {
@@ -75,3 +77,5 @@ private:
   AsyncState state;
   E err;
 };
+
+} // namespace uniuno

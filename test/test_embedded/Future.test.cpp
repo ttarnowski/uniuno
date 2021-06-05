@@ -3,6 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using namespace uniuno;
+
 TEST(Future, test_futures_work_on_embedded_environment) {
   unsigned long time = millis() + 50;
 

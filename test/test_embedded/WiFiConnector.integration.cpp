@@ -1,15 +1,15 @@
 #ifdef TEST_INTEGRATION
 
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266WiFiAdapter.h>
-#include <ESP8266WiFiMulti.h>
 #include <WiFiConnector.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #define XSTR(x) #x
 #define STR(x) XSTR(x)
+
+using namespace uniuno;
 
 class Callback {
   virtual void call() = 0;
@@ -22,9 +22,7 @@ public:
 
 TEST(WiFiConnector, test_connect_connects_to_wifi) {
   CallbackMock mock;
-  ESP8266WiFiMulti wifi_multi;
-  ESP8266WiFiAdapter wifi_adapter(&WiFi, &wifi_multi);
-
+  ESP8266WiFiAdapter wifi_adapter;
   WiFiConnector wifi_connector(&wifi_adapter);
 
   EXPECT_CALL(mock, call());

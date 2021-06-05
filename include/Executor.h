@@ -4,6 +4,8 @@
 #include <Schedule.h>
 #include <queue>
 
+namespace uniuno {
+
 class Executor {
 public:
   template <typename I, typename O, typename E = Error>
@@ -65,3 +67,5 @@ private:
   std::queue<std::function<AsyncState(void)>> futures;
   int index = 0;
 };
+
+} // namespace uniuno

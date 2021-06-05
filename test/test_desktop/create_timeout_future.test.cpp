@@ -3,6 +3,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+using namespace uniuno;
+
 TEST(
     create_timeout_future,
     it_resolves_with_underlying_future_value_if_that_future_resolved_before_timeout) {

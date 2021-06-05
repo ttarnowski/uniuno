@@ -6,8 +6,10 @@
 #include <logging.h>
 #include <time.h>
 
-static Future<void, time_t> set_clock(WiFiConnector *connector,
-                                      unsigned long timeout_ms = 60000) {
+namespace uniuno {
+
+static Future<void, time_t> sync_clock(WiFiConnector *connector,
+                                       unsigned long timeout_ms = 60000) {
   return create_timeout_future(
       connector->connect(timeout_ms)
           .and_then([]() {
@@ -31,3 +33,5 @@ static Future<void, time_t> set_clock(WiFiConnector *connector,
           })),
       timeout_ms);
 }
+
+} // namespace uniuno
