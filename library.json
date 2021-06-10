@@ -1,0 +1,31 @@
+{
+  "name": "uniuno",
+  "version": "1.0.0",
+  "description": "IoT Rapid Prototyping Library",
+  "keywords": "http client, https client, clock synchronization, wifi manager, wifi, future, promises, non-blocking, async",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/ttarnowski/uniuno.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Tomasz Tarnowski",
+      "email": "uniuno@uniuno.io",
+      "url": "https://tomasztarnowski.com",
+      "maintainer": true
+    }
+  ],
+  "export": {
+    "exclude":
+    [
+        "test/*"
+    ]
+  },
+  "license": "MIT",
+  "dependencies": {
+  },
+  "frameworks": ["Arduino"],
+  "platforms": ["espressif8266"]
+}
