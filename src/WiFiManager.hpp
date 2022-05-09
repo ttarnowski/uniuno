@@ -3,10 +3,15 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <EventDispatcher.hpp>
-#include <Future.hpp>
+#include <Timer.hpp>
 #include <WiFiClient.h>
 
 class WiFiManager {
+private:
+  ESP8266WiFiMulti *wifiMulti;
+  EventDispatcher *dispatcher;
+  Timer *timer;
+  bool connected = false;
 
 public:
   struct WiFiConnectedEvent {
@@ -17,46 +22,40 @@ public:
     static constexpr const char *Name = "wifi_disconnected";
   };
 
-  WiFiManager(ESP8266WiFiClass *wifi, ESP8266WiFiMulti *wifi_multi,
-              EventDispatcher *dispatcher, const char *ssid,
-              const char *password) {
-    this->wifi = wifi;
-    this->wifi_multi = wifi_multi;
+  WiFiManager(ESP8266WiFiMulti *wifiMulti, EventDispatcher *dispatcher,
+              Timer *timer, const char *ssid, const char *password) {
+    this->wifiMulti = wifiMulti;
     this->dispatcher = dispatcher;
-
-    this->wifi->mode(WIFI_STA);
-    this->wifi_multi->addAP(ssid, password);
+    this->timer = timer;
+    WiFi.mode(WIFI_STA);
+    this->wifiMulti->addAP(ssid, password);
   }
 
-  Future<void, wl_status_t> connect(unsigned long timeout_ms = 5000) {
-    return Future<void, wl_status_t>([this]() {
-      if (this->wifi->status() == WL_CONNECTED) {
-        return AsyncResult<wl_status_t>::resolve(WL_CONNECTED);
-      }
+  void connect(std::function<void(wl_status_t)> onConnected,
+               unsigned long timeoutMs = 5000) {
+    if (this->connected && WiFi.status() == WL_CONNECTED) {
+      onConnected(WL_CONNECTED);
+      return;
+    }
 
-      if (this->wifi_multi->run() == WL_CONNECTED) {
-        this->dispatcher->dispatch(WiFiConnectedEvent{});
-        return AsyncResult<wl_status_t>::resolve(WL_CONNECTED);
-      }
+    this->connected = false;
 
-      return AsyncResult<wl_status_t>::pending();
-    });
+    this->timer->setOnLoopUntil(
+        [onConnected, this]() {
+          if (this->wifiMulti->run() == WL_CONNECTED) {
+            this->connected = true;
+            onConnected(WL_CONNECTED);
+            this->dispatcher->dispatch(WiFiConnectedEvent{});
+            return true;
+          }
+          return false;
+        },
+        [onConnected]() { onConnected(WL_CONNECT_FAILED); }, timeoutMs);
   }
 
-  Future<void, void> disconnect() {
-    return Future<void, void>([this]() {
-      if (this->wifi->status() == WL_DISCONNECTED) {
-        this->dispatcher->dispatch(WiFiDisconnectedEvent{});
-        return AsyncResult<void>::resolve();
-      }
-
-      return AsyncResult<void>::pending();
-    });
+  void disconnect() {
+    WiFi.disconnect();
+    this->connected = false;
+    this->dispatcher->dispatch(WiFiDisconnectedEvent{});
   }
-
-private:
-  ESP8266WiFiMulti *wifi_multi;
-  EventDispatcher *dispatcher;
-  ESP8266WiFiClass *wifi;
-  bool connected = false;
 };

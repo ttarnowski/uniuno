@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <gtest/gtest.h>
 
+TEST(Example, just_an_example) { ASSERT_EQ(true, true); }
+
 void setup() {
   Serial.begin(115200);
   delay(1000);

@@ -1,0 +1,24 @@
+{
+  "name": "UniUno",
+  "version": "1.0.0",
+  "description": "Set of tools for IoT development",
+  "keywords": "iot, wifi, http, https, http client, https client, async, futures",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/ttarnowski/uniuno.git"
+  },
+  "authors":
+  [
+    {
+      "name": "Tomasz Tarnowski",
+      "email": "t.tarnowski90@gmail.com",
+      "url": "https://tomasztarnowski.com"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://uniuno.io/",
+  "dependencies": {},
+  "frameworks": "arduino",
+  "platforms": "espressif8266"
+}

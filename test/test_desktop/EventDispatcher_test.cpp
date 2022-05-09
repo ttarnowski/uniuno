@@ -1,6 +1,6 @@
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include <EventDispatcher.hpp>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 using namespace testing;
 
@@ -18,40 +18,36 @@ public:
   MOCK_METHOD(void, call, (TestEvent * e), (override));
 };
 
-TEST(
-    EventDispatcher,
-    test_listeners_set_with_on_method_have_been_notified_for_each_dispatched_event_of_the_same_type) {
+TEST(EventDispatcher,
+     on_test_event_is_called_whenever_test_event_is_dispatched) {
   EventDispatcher dispatcher;
-  TestEvent e1{"123"};
-  TestEvent e2{"234"};
   CallbackMock mock;
+  TestEvent expectedEvent1{"abcd"};
+  TestEvent expectedEvent2{"bcde"};
 
   {
     InSequence s;
-    EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(e1.id)))).Times(2);
-    EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(e2.id)))).Times(2);
+    EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(expectedEvent1.id))));
+    EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(expectedEvent2.id))));
   }
 
   dispatcher.on<TestEvent>([&](TestEvent *e) { mock.call(e); });
-  dispatcher.on<TestEvent>([&](TestEvent *e) { mock.call(e); });
 
-  dispatcher.dispatch<TestEvent>(e1);
-  dispatcher.dispatch<TestEvent>(e2);
+  dispatcher.dispatch<TestEvent>(expectedEvent1);
+  dispatcher.dispatch<TestEvent>(expectedEvent2);
 }
 
-TEST(
-    EventDispatcher,
-    test_listeners_set_with_once_method_have_been_notified_only_once_when_there_was_an_event_of_the_same_type_dispatched) {
+TEST(EventDispatcher,
+     once_test_event_is_called_once_despite_test_event_being_dispatched_twice) {
   EventDispatcher dispatcher;
-  TestEvent e1{"123"};
-  TestEvent e2{"234"};
   CallbackMock mock;
+  TestEvent expectedEvent1{"abcdef"};
 
-  EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(e1.id)))).Times(2);
+  EXPECT_CALL(mock, call(Field(&TestEvent::id, Eq(expectedEvent1.id))))
+      .Times(1);
 
   dispatcher.once<TestEvent>([&](TestEvent *e) { mock.call(e); });
-  dispatcher.once<TestEvent>([&](TestEvent *e) { mock.call(e); });
 
-  dispatcher.dispatch<TestEvent>(e1);
-  dispatcher.dispatch<TestEvent>(e2);
+  dispatcher.dispatch<TestEvent>(expectedEvent1);
+  dispatcher.dispatch<TestEvent>(TestEvent{"abcdef"});
 }

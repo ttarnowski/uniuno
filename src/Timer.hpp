@@ -6,7 +6,7 @@
 class Timer {
 public:
 #ifdef ARDUINO
-  Timer(std::function<unsigned long(void)> getNowInMS = millis()) {
+  Timer(std::function<unsigned long(void)> getNowInMS = millis) {
     this->now = getNowInMS;
   }
 
